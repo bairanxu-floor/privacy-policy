@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>白然序海巡</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+  /* 版面：單欄手機清單，像施工單一樣一格一格打勾 */
+  :root {
+    --bg: #f6f3ee;
+    --card: #ffffff;
+    --fg: #2a241e;
+    --muted: #7a6f63;
+    --line: #e4ddd2;
+    --accent: #8a5a2b;
+    --accent-soft: #f1e6d8;
+    --done: #3f7a4f;
+    --done-soft: #e3efe5;
+    --font: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1c1916; --card: #26221e; --fg: #efe8de; --muted: #a89c8e; --line: #3a342d;
+      --accent: #d9a56b; --accent-soft: #3a2e22; --done: #7fc28f; --done-soft: #23352a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1c1916; --card: #26221e; --fg: #efe8de; --muted: #a89c8e; --line: #3a342d;
+    --accent: #d9a56b; --accent-soft: #3a2e22; --done: #7fc28f; --done-soft: #23352a;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 16px; line-height: 1.6;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 20px 40px;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  header h1 { font-size: 1.5rem; margin: 0; text-wrap: balance; }
+  header p { margin: 4px 0 0; color: var(--muted); font-size: 0.92rem; }
+  .progress { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--muted); }
+  .bar { flex: 1; height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  .bar span { display: block; height: 100%; width: 0; background: var(--done); transition: width .3s; }
+  section { display: flex; flex-direction: column; gap: 10px; }
+  h2 { font-size: 1rem; margin: 0; color: var(--accent); letter-spacing: .05em; }
+  .hint { margin: -6px 0 0; font-size: 0.85rem; color: var(--muted); }
+  .list { display: flex; flex-direction: column; gap: 8px; }
+  .kw {
+    display: flex; align-items: center; gap: 12px; padding: 14px 16px; min-height: 56px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    color: var(--fg); text-decoration: none; font-size: 1.05rem; font-weight: 500;
+  }
+  .kw:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .kw .mark {
+    flex: none; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line);
+    display: grid; place-items: center; font-size: 0.8rem; color: transparent;
+  }
+  .kw .text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .kw .go { color: var(--accent); font-size: 0.85rem; flex: none; }
+  .kw.done { background: var(--done-soft); border-color: transparent; }
+  .kw.done .mark { background: var(--done); border-color: var(--done); color: var(--card); }
+  .kw.done .go { color: var(--done); }
+  .remove { flex: none; border: 0; background: none; color: var(--muted); font-size: 0.85rem; padding: 6px; cursor: pointer; font-family: inherit; }
+  form { display: flex; gap: 8px; }
+  input {
+    flex: 1; min-width: 0; padding: 12px 14px; font-size: 1rem; font-family: inherit;
+    border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--fg);
+  }
+  .btn {
+    padding: 12px 16px; border: 0; border-radius: 10px; font-size: 1rem; font-family: inherit;
+    background: var(--accent); color: var(--card); font-weight: 700; cursor: pointer;
+  }
+  .btn.ghost { background: var(--accent-soft); color: var(--accent); }
+  .tips { background: var(--accent-soft); border-radius: 12px; padding: 14px 16px; font-size: 0.92rem; }
+  .tips ol { margin: 6px 0 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
+  @media (prefers-reduced-motion: reduce) { .bar span { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>白然序海巡</h1>
+    <p>點關鍵字，直接打開 Threads 的「最新」搜尋結果。看過的會自動打勾，每天重新開始。</p>
+  </header>
+
+  <div class="progress">
+    <div class="bar"><span id="bar"></span></div>
+    <span id="count">今天看了 0 / 0</span>
+  </div>
+
+  <section>
+    <h2>找客戶</h2>
+    <p class="hint">看到有人在問地板、裝潢，就親自留言回覆。</p>
+    <div class="list" id="list-customer"></div>
+  </section>
+
+  <section>
+    <h2>品牌交流</h2>
+    <p class="hint">找居家、建材品牌的小編互動。</p>
+    <div class="list" id="list-brand"></div>
+  </section>
+
+  <section>
+    <h2>我加的關鍵字</h2>
+    <div class="list" id="list-custom"></div>
+    <form id="add-form">
+      <input id="add-input" type="text" placeholder="例如：浴室翻新" autocomplete="off">
+      <button class="btn" type="submit">加入</button>
+    </form>
+    <p class="hint">自己加的關鍵字只存在這支手機（或這台電腦）的瀏覽器裡。</p>
+  </section>
+
+  <button class="btn ghost" id="reset" type="button">清除今天的打勾</button>
+
+  <div class="tips">
+    <strong>使用小提醒</strong>
+    <ol>
+      <li>第一次使用，請先在這個瀏覽器登入 Threads（用品牌帳號或個人帳號都可以）。</li>
+      <li>打開後如果顯示的不是最新的文章，點搜尋結果上方的「最新」。</li>
+      <li>看完按返回，回到這頁點下一個。</li>
+    </ol>
+  </div>
+</div>
+
+<script>
+  const CUSTOMER = ["木地板推薦", "超耐磨地板", "SPC地板", "石塑地板", "海島型木地板", "地板施工",
+                    "地板報價", "換地板", "地板 推薦", "裝潢 地板", "新成屋 地板", "老屋翻新 地板"];
+  const BRAND = ["小編 交流", "小編互粉", "居家品牌 小編", "建材 小編"];
+
+  const today = new Date().toLocaleDateString("zh-TW");
+  const store = {
+    get(key, fallback) {
+      try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
+    },
+    set(key, value) {
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+    }
+  };
+
+  let done = store.get("done", { day: today, words: [] });
+  if (done.day !== today) done = { day: today, words: [] };
+  let custom = store.get("custom", []);
+
+  const url = (q) => "https://www.threads.com/search?q=" + encodeURIComponent(q) + "&serp_type=default&filter=recent";
+
+  function item(word, removable) {
+    const row = document.createElement("a");
+    row.className = "kw" + (done.words.includes(word) ? " done" : "");
+    row.href = url(word);
+    row.target = "_blank";
+    row.rel = "noopener";
+    row.innerHTML = '<span class="mark">✓</span><span class="text"></span><span class="go">搜尋 →</span>';
+    row.querySelector(".text").textContent = word;
+    row.addEventListener("click", () => {
+      if (!done.words.includes(word)) done.words.push(word);
+      store.set("done", done);
+      setTimeout(render, 300);
+    });
+    if (removable) {
+      const del = document.createElement("button");
+      del.className = "remove";
+      del.type = "button";
+      del.textContent = "刪除";
+      del.addEventListener("click", (e) => {
+        e.preventDefault(); e.stopPropagation();
+        custom = custom.filter((w) => w !== word);
+        store.set("custom", custom);
+        render();
+      });
+      row.appendChild(del);
+    }
+    return row;
+  }
+
+  function fill(id, words, removable) {
+    const el = document.getElementById(id);
+    el.replaceChildren(...words.map((w) => item(w, removable)));
+  }
+
+  function render() {
+    fill("list-customer", CUSTOMER, false);
+    fill("list-brand", BRAND, false);
+    fill("list-custom", custom, true);
+    const all = [...CUSTOMER, ...BRAND, ...custom];
+    const seen = all.filter((w) => done.words.includes(w)).length;
+    document.getElementById("count").textContent = "今天看了 " + seen + " / " + all.length;
+    document.getElementById("bar").style.width = (all.length ? seen / all.length * 100 : 0) + "%";
+  }
+
+  document.getElementById("add-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const input = document.getElementById("add-input");
+    const word = input.value.trim();
+    if (word && !custom.includes(word) && !CUSTOMER.includes(word) && !BRAND.includes(word)) {
+      custom.push(word);
+      store.set("custom", custom);
+    }
+    input.value = "";
+    render();
+  });
+
+  document.getElementById("reset").addEventListener("click", () => {
+    done = { day: today, words: [] };
+    store.set("done", done);
+    render();
+  });
+
+  render();
+</script>
+</body>
+</html>
