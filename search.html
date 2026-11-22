@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <style>
-  /* 版面：單欄手機清單，像施工單一樣一格一格打勾 */
+  /* 版面：單欄手機清單，依客戶需求的急迫程度由上往下排 */
   :root {
     --bg: #f6f3ee;
     --card: #ffffff;
@@ -19,18 +19,22 @@
     --accent-soft: #f1e6d8;
     --done: #3f7a4f;
     --done-soft: #e3efe5;
+    --hot: #b4432f;
+    --hot-soft: #f7e2dc;
     --font: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #1c1916; --card: #26221e; --fg: #efe8de; --muted: #a89c8e; --line: #3a342d;
       --accent: #d9a56b; --accent-soft: #3a2e22; --done: #7fc28f; --done-soft: #23352a;
+      --hot: #ec8a74; --hot-soft: #3d2620;
       color-scheme: dark;
     }
   }
   :root[data-theme="dark"] {
     --bg: #1c1916; --card: #26221e; --fg: #efe8de; --muted: #a89c8e; --line: #3a342d;
     --accent: #d9a56b; --accent-soft: #3a2e22; --done: #7fc28f; --done-soft: #23352a;
+    --hot: #ec8a74; --hot-soft: #3d2620;
     color-scheme: dark;
   }
   * { box-sizing: border-box; }
@@ -40,14 +44,16 @@
     padding-right: max(16px, env(safe-area-inset-right, 0px));
     padding-block: 20px 40px;
   }
-  .wrap { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  .wrap { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
   header h1 { font-size: 1.5rem; margin: 0; text-wrap: balance; }
   header p { margin: 4px 0 0; color: var(--muted); font-size: 0.92rem; }
   .progress { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: var(--muted); }
   .bar { flex: 1; height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; }
   .bar span { display: block; height: 100%; width: 0; background: var(--done); transition: width .3s; }
   section { display: flex; flex-direction: column; gap: 10px; }
-  h2 { font-size: 1rem; margin: 0; color: var(--accent); letter-spacing: .05em; }
+  h2 { font-size: 1rem; margin: 0; color: var(--accent); letter-spacing: .05em; display: flex; align-items: center; gap: 8px; }
+  .tag { font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); letter-spacing: 0; }
+  .tag.hot { background: var(--hot-soft); color: var(--hot); }
   .hint { margin: -6px 0 0; font-size: 0.85rem; color: var(--muted); }
   .list { display: flex; flex-direction: column; gap: 8px; }
   .kw {
@@ -55,7 +61,7 @@
     background: var(--card); border: 1px solid var(--line); border-radius: 12px;
     color: var(--fg); text-decoration: none; font-size: 1.05rem; font-weight: 500;
   }
-  .kw:focus-visible, button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .kw:focus-visible, button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
   .kw .mark {
     flex: none; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line);
     display: grid; place-items: center; font-size: 0.8rem; color: transparent;
@@ -76,6 +82,15 @@
     background: var(--accent); color: var(--card); font-weight: 700; cursor: pointer;
   }
   .btn.ghost { background: var(--accent-soft); color: var(--accent); }
+  details.guide { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 4px 16px; }
+  details.guide summary { cursor: pointer; font-weight: 700; padding: 10px 0; }
+  .levels { display: flex; flex-direction: column; gap: 14px; padding-bottom: 14px; }
+  .level h3 { margin: 0 0 4px; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
+  .level ul { margin: 0; padding-left: 1.2em; font-size: 0.92rem; display: flex; flex-direction: column; gap: 2px; }
+  .pill { font-size: 0.75rem; padding: 1px 8px; border-radius: 99px; font-weight: 700; }
+  .pill.s { background: var(--hot-soft); color: var(--hot); }
+  .pill.a { background: var(--accent-soft); color: var(--accent); }
+  .pill.x { background: var(--line); color: var(--muted); }
   .tips { background: var(--accent-soft); border-radius: 12px; padding: 14px 16px; font-size: 0.92rem; }
   .tips ol { margin: 6px 0 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 4px; }
   @media (prefers-reduced-motion: reduce) { .bar span { transition: none; } }
@@ -94,23 +109,46 @@
     <span id="count">今天看了 0 / 0</span>
   </div>
 
-  <section>
-    <h2>找客戶</h2>
-    <p class="hint">看到有人在問地板、裝潢，就親自留言回覆。</p>
-    <div class="list" id="list-customer"></div>
-  </section>
+  <details class="guide" id="guide" open>
+    <summary>看到文章，怎麼判斷要不要回？</summary>
+    <div class="levels">
+      <div class="level">
+        <h3><span class="pill s">馬上回</span>正在找人做</h3>
+        <ul>
+          <li>有問句：「有推薦的嗎」「請問」「多少錢」「哪家好」</li>
+          <li>講出細節：地區、坪數、預算、預計什麼時候動工</li>
+          <li>剛買房、快交屋、房子漏水壁癌急著處理</li>
+          <li>一週內的新文章，留言還不多</li>
+        </ul>
+      </div>
+      <div class="level">
+        <h3><span class="pill a">可以經營</span>還在想、還在看</h3>
+        <ul>
+          <li>分享自己的裝修過程或完工照</li>
+          <li>抱怨踩雷、問大家意見、比較材質</li>
+          <li>回一句實用建議，讓對方記住你</li>
+        </ul>
+      </div>
+      <div class="level">
+        <h3><span class="pill x">跳過</span>不是客戶</h3>
+        <ul>
+          <li>同業廣告：「加LINE」「免費估價」「歡迎私訊報價」</li>
+          <li>新聞、徵才、團購、業配文</li>
+          <li>超過兩週的舊文，或已經說找到廠商了</li>
+        </ul>
+      </div>
+      <p class="hint" style="margin:0">回覆時先回答對方的問題，不要一開始就推銷；有興趣的人自然會私訊你。</p>
+    </div>
+  </details>
 
-  <section>
-    <h2>品牌交流</h2>
-    <p class="hint">找居家、建材品牌的小編互動。</p>
-    <div class="list" id="list-brand"></div>
-  </section>
+  <div id="groups"></div>
 
   <section>
     <h2>我加的關鍵字</h2>
+    <p class="hint">建議加上你的服務地區，例如「台中裝潢」「台中統包」。</p>
     <div class="list" id="list-custom"></div>
     <form id="add-form">
-      <input id="add-input" type="text" placeholder="例如：浴室翻新" autocomplete="off">
+      <input id="add-input" type="text" placeholder="例如：台中裝潢" autocomplete="off">
       <button class="btn" type="submit">加入</button>
     </form>
     <p class="hint">自己加的關鍵字只存在這支手機（或這台電腦）的瀏覽器裡。</p>
@@ -121,17 +159,25 @@
   <div class="tips">
     <strong>使用小提醒</strong>
     <ol>
-      <li>第一次使用，請先在這個瀏覽器登入 Threads（用品牌帳號或個人帳號都可以）。</li>
+      <li>第一次使用，請先在這個瀏覽器登入 Threads。</li>
       <li>打開後如果顯示的不是最新的文章，點搜尋結果上方的「最新」。</li>
-      <li>看完按返回，回到這頁點下一個。</li>
+      <li>建議從最上面的「正在找廠商」先看，時間不夠就看這組就好。</li>
     </ol>
   </div>
 </div>
 
 <script>
-  const CUSTOMER = ["木地板推薦", "超耐磨地板", "SPC地板", "石塑地板", "海島型木地板", "地板施工",
-                    "地板報價", "換地板", "地板 推薦", "裝潢 地板", "新成屋 地板", "老屋翻新 地板"];
-  const BRAND = ["小編 交流", "小編互粉", "居家品牌 小編", "建材 小編"];
+  const GROUPS = [
+    { title: "正在找廠商", tag: "最優先", hot: true, hint: "這些人通常已經準備要找人做了。",
+      words: ["求推薦裝潢", "裝潢推薦", "裝修推薦", "統包推薦", "室內設計推薦", "裝潢報價", "木地板推薦", "系統櫃推薦"] },
+    { title: "準備要裝修", tag: "高潛力", hint: "剛買房或在做功課，先留言建立印象。",
+      words: ["新成屋裝潢", "中古屋翻新", "老屋翻新", "交屋", "裝潢預算", "裝潢踩雷"] },
+    { title: "局部修繕", tag: "小案也接", hint: "地板、浴室、漏水這類單項工程。",
+      words: ["換地板", "超耐磨地板", "SPC地板", "浴室翻新", "廚房翻新", "壁癌", "漏水", "油漆推薦"] },
+    { title: "品牌交流", tag: "經營關係", hint: "找居家、建材品牌的小編互動。",
+      words: ["小編 交流", "小編互粉", "居家品牌 小編", "建材 小編"] }
+  ];
+  const BUILT_IN = GROUPS.flatMap((g) => g.words);
 
   const today = new Date().toLocaleDateString("zh-TW");
   const store = {
@@ -146,6 +192,10 @@
   let done = store.get("done", { day: today, words: [] });
   if (done.day !== today) done = { day: today, words: [] };
   let custom = store.get("custom", []);
+
+  const guide = document.getElementById("guide");
+  if (store.get("guideClosed", false)) guide.open = false;
+  guide.addEventListener("toggle", () => store.set("guideClosed", !guide.open));
 
   const url = (q) => "https://www.threads.com/search?q=" + encodeURIComponent(q) + "&serp_type=default&filter=recent";
 
@@ -178,16 +228,25 @@
     return row;
   }
 
-  function fill(id, words, removable) {
-    const el = document.getElementById(id);
-    el.replaceChildren(...words.map((w) => item(w, removable)));
-  }
-
   function render() {
-    fill("list-customer", CUSTOMER, false);
-    fill("list-brand", BRAND, false);
-    fill("list-custom", custom, true);
-    const all = [...CUSTOMER, ...BRAND, ...custom];
+    const groups = document.getElementById("groups");
+    groups.replaceChildren(...GROUPS.map((g) => {
+      const sec = document.createElement("section");
+      sec.innerHTML = '<h2><span class="name"></span><span class="tag"></span></h2><p class="hint"></p><div class="list"></div>';
+      sec.querySelector(".name").textContent = g.title;
+      const tag = sec.querySelector(".tag");
+      tag.textContent = g.tag;
+      if (g.hot) tag.classList.add("hot");
+      sec.querySelector(".hint").textContent = g.hint;
+      sec.querySelector(".list").replaceChildren(...g.words.map((w) => item(w, false)));
+      return sec;
+    }));
+    groups.style.display = "flex";
+    groups.style.flexDirection = "column";
+    groups.style.gap = "24px";
+
+    document.getElementById("list-custom").replaceChildren(...custom.map((w) => item(w, true)));
+    const all = [...BUILT_IN, ...custom];
     const seen = all.filter((w) => done.words.includes(w)).length;
     document.getElementById("count").textContent = "今天看了 " + seen + " / " + all.length;
     document.getElementById("bar").style.width = (all.length ? seen / all.length * 100 : 0) + "%";
@@ -197,7 +256,7 @@
     e.preventDefault();
     const input = document.getElementById("add-input");
     const word = input.value.trim();
-    if (word && !custom.includes(word) && !CUSTOMER.includes(word) && !BRAND.includes(word)) {
+    if (word && !custom.includes(word) && !BUILT_IN.includes(word)) {
       custom.push(word);
       store.set("custom", custom);
     }
